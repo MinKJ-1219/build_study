@@ -1,0 +1,6 @@
+#ifndef UNDECLARED_H
+#define UNDECLARED_H
+
+#define UNDECLARED_OFFSET 999
+
+#endif

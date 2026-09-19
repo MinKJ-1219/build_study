@@ -1,0 +1,25 @@
+# 2주차 실습: Bazel의 타겟 선언
+# Make/CMake와 달리 srcs/hdrs/deps를 전부 명시적으로 적어야 한다 (자동 탐색 없음)
+
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+cc_library(
+    name = "foo",
+    srcs = ["foo.c"],
+    hdrs = ["foo.h"],
+)
+
+cc_binary(
+    name = "app",
+    srcs = ["main.c"],
+    deps = [":foo"],
+)
+
+# Hermeticity(격리성) 실습용 타겟.
+# undeclared.h가 디렉터리에 실제로 존재하지만 일부러 hdrs에 선언하지 않았다.
+# 샌드박스가 "선언된 입력만" 보여주는지 직접 확인하는 것이 목적.
+cc_library(
+    name = "hermetic_demo",
+    srcs = ["hermetic_demo.c"],
+    hdrs = ["undeclared.h"],
+)

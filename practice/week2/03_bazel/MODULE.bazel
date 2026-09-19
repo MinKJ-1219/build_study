@@ -1,0 +1,8 @@
+# Bzlmod 진입점.
+# (Make의 Makefile, CMake의 CMakeLists.txt에 해당하는 "이 디렉터리가 Bazel 프로젝트의 루트다"라는 표시)
+module(name = "week2_bazel_demo", version = "0.1")
+
+# 최신 Bazel(9.x)은 cc_library/cc_binary 같은 C/C++ 규칙조차 코어에서 빠지고
+# rules_cc라는 별도 모듈(Bazel Central Registry에서 받아옴)로 분리되어 있다.
+# Bazel Central Registry: https://registry.bazel.build/ 에서 버전 확인 가능
+bazel_dep(name = "rules_cc", version = "0.2.25")

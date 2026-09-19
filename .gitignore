@@ -12,3 +12,12 @@ practice/week1/app_dynamic
 practice/week1/app_static
 practice/week1/app_time1
 practice/week1/app_time2
+
+# 컴파일된 실행 파일 (practice/week2/01_make)
+practice/week2/01_make/app
+
+# CMake out-of-source 빌드 디렉터리 (practice/week2/02_cmake)
+practice/week2/02_cmake/build/
+
+# Bazel 산출물 심볼릭 링크 (practice/week2/03_bazel)
+practice/week2/03_bazel/bazel-*
