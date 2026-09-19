@@ -1,0 +1,14 @@
+# 컴파일 중간 산출물
+*.o
+*.i
+*.s
+
+# 컴파일된 실행 파일 (practice/week1)
+practice/week1/app
+practice/week1/app_arm
+practice/week1/app_build1
+practice/week1/app_build2
+practice/week1/app_dynamic
+practice/week1/app_static
+practice/week1/app_time1
+practice/week1/app_time2
