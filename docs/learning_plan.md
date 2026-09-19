@@ -36,21 +36,21 @@
 
 **목표**: Make의 한계를 체감하고, Bazel의 설계 철학을 이해
 
-### 2-1. Make/CMake (1주 이내, 빠르게 훑기)
-- Makefile의 타겟-의존성-레시피 구조
-- CMake가 Make 위에서 어떤 추상화를 제공하는지 (플랫폼 독립적 빌드 스크립트 생성)
+### 2-1. Make/CMake (1주 이내, 빠르게 훑기) — ✅ 완료 (2026-09-19)
+- Makefile의 타겟-의존성-레시피 구조, 암묵적 규칙, `.PHONY` — `practice/week2/01_make/`
+- CMake가 Make 위에서 어떤 추상화를 제공하는지 (플랫폼 독립적 빌드 스크립트 생성) — `practice/week2/02_cmake/`. `add_library`+`target_link_libraries`(PUBLIC/PRIVATE)로 라이브러리 분리 구조까지 실습
 - 이것들의 한계: 대규모 멀티 언어/멀티 팀 모노레포에서의 확장성 문제, 캐시 무효화 문제, 재현성 부족
 
-### 2-2. Bazel 심화 (핵심, 1~1.5주)
+### 2-2. Bazel 심화 (핵심, 1~1.5주) — ✅ 완료 (2026-09-19, 원격 실행·멀티언어는 개념만 다룸)
 
-- **핵심 개념**: `WORKSPACE`/`MODULE.bazel`(Bzlmod), `BUILD.bazel` 파일, 타겟(target), 규칙(rule), 레이블(`//path/to:target`)
-- **빌드 그래프의 명시성**: Bazel이 왜 "모든 의존성을 명시하라"고 강제하는지 → 정확한 증분 빌드와 캐싱을 가능하게 함
-- **원격 캐싱(Remote Caching)**: 팀/CI 전체가 빌드 결과물을 공유해 재빌드를 줄이는 구조
-- **원격 실행(Remote Execution, RBE)**: 빌드 자체를 분산 실행해 대규모 코드베이스의 빌드 시간을 단축하는 구조 — SDV처럼 코드량이 매우 큰 환경에서 특히 중요
-- **Hermeticity(격리성)**: Bazel이 샌드박스로 빌드를 격리해 "내 컴퓨터에서는 되는데" 문제를 원천 차단하는 방식
-- **멀티 언어 지원**: C/C++, Python 등 다양한 언어/툴체인을 하나의 빌드 그래프로 통합하는 능력 (SDV처럼 AUTOSAR C++, Python 툴링, 임베디드 C가 섞인 환경에 적합)
+- **핵심 개념**: `WORKSPACE`/`MODULE.bazel`(Bzlmod), `BUILD.bazel` 파일, 타겟(target), 규칙(rule), 레이블(`//path/to:target`) — `practice/week2/03_bazel/`
+- **빌드 그래프의 명시성**: Bazel이 왜 "모든 의존성을 명시하라"고 강제하는지 → 정확한 증분 빌드와 캐싱을 가능하게 함. `bazel query "deps(...)"`/`"rdeps(...)"`로 그래프 조회, 테스트 영향 분석과의 연결까지 실습
+- **원격 캐싱(Remote Caching)**: 팀/CI 전체가 빌드 결과물을 공유해 재빌드를 줄이는 구조. `--disk_cache`로 두 워크스페이스 간 캐시 공유를 직접 재현. 실제 `--remote_cache` 프로토콜/서버 구성은 개념으로만 다룸
+- **원격 실행(Remote Execution, RBE)**: 빌드 자체를 분산 실행해 대규모 코드베이스의 빌드 시간을 단축하는 구조 — SDV처럼 코드량이 매우 큰 환경에서 특히 중요. ⚠️ 실제 클러스터(Buildbarn/BuildBuddy 등)가 필요해 **개념 설명만 진행, 실습은 보류**
+- **Hermeticity(격리성)**: Bazel이 샌드박스로 빌드를 격리해 "내 컴퓨터에서는 되는데" 문제를 원천 차단하는 방식. 선언 안 된 헤더 파일이 샌드박스에서 실제로 안 보이는 것을 실패→해결 순서로 확인. Hermetic test 개념(`TEST_TMPDIR`, 테스트 결과 캐싱, `requires-network` 태그)까지 확장
+- **멀티 언어 지원**: C/C++, Python 등 다양한 언어/툴체인을 하나의 빌드 그래프로 통합하는 능력 (SDV처럼 AUTOSAR C++, Python 툴링, 임베디드 C가 섞인 환경에 적합). ⚠️ **개념만 언급, 실습(예: py_library 추가)은 아직 안 함**
 
-**추천 실습**: 작은 C++ 프로젝트(예: 라이브러리 2개 + 실행파일 1개)를 Bazel로 빌드해보고, 일부러 소스 하나만 수정해 증분 빌드 로그를 관찰
+**추천 실습**: 작은 C++ 프로젝트(예: 라이브러리 2개 + 실행파일 1개)를 Bazel로 빌드해보고, 일부러 소스 하나만 수정해 증분 빌드 로그를 관찰 → 완료 (`:foo` 라이브러리 + `:app` 실행파일 + `:hermetic_demo`)
 
 ---
 
@@ -113,9 +113,9 @@
 ## 진행 상태 체크리스트
 
 - [x] 1단계: 빌드의 본질 이해
-- [ ] 2단계: 빌드 시스템 도구 실습 (Make/CMake → Bazel)
-  - [ ] 2-1. Make/CMake 훑기 (practice/week2/01_make, 02_cmake) — 직접 실습 진행 중
-  - [ ] 2-2. Bazel 심화
+- [x] 2단계: 빌드 시스템 도구 실습 (Make/CMake → Bazel)
+  - [x] 2-1. Make/CMake 훑기 (practice/week2/01_make, 02_cmake)
+  - [x] 2-2. Bazel 심화 (practice/week2/03_bazel) — 원격 실행(RBE)·멀티 언어 지원은 개념만 다룸, 실습 보류
 - [ ] 3단계: CI/CD와 빌드의 결합
 - [ ] 4단계: SDV 특화 통합 빌드 고려사항
 - [ ] 5단계: 실전 미니 프로젝트
