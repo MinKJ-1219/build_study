@@ -21,3 +21,9 @@ build:release --workspace_status_command=tools/workspace_status.sh
 common:ci --disk_cache=~/.cache/bazel-disk
 # repository cache: 다운로드한 외부 의존성 아카이브(rules_cc, rules_pkg 등) — sha256으로 찾음
 common:ci --repository_cache=~/.cache/bazel-repo
+
+# 3-4 병목 해결: 저장소 규칙(툴체인 자동 감지 등)이 보는 PATH를 표준 경로로 고정한다.
+# GitHub 러너에는 Swift가 /usr/local/bin 쪽에 설치돼 있어서, 간접 의존성인 rules_swift
+# (rules_cc → rules_apple → rules_swift)가 swiftc를 발견하면 자동 감지에만 약 36초를 쓴다.
+# 자동 감지 결과는 환경에 따라 달라지므로 어떤 캐시에도 저장되지 않아 매 실행마다 반복된다.
+common:ci --repo_env=PATH=/usr/bin:/bin
