@@ -1,5 +1,5 @@
 # 3주차 실습 CI 파이프라인: checkout → build → test → package → artifact 저장
-# (3-1: build/test, 3-2: 환경 고정, 3-3: package/artifact)
+# (3-1: build/test, 3-2: 환경 고정, 3-3: package/artifact, 3-4: 캐시)
 # GitHub Actions는 저장소 루트의 .github/workflows/ 아래 파일만 인식한다.
 name: week3-ci
 
@@ -33,6 +33,22 @@ jobs:
       # 1) checkout: 러너는 빈 VM이므로 소스를 먼저 받아와야 한다
       - name: Checkout
         uses: actions/checkout@v5
+
+      # 3-4) 캐시 복원: 이전 실행이 남긴 Bazel 캐시를 받아온다 (Job 종료 시 자동으로 저장)
+      #   key          : 정확히 일치하는 캐시를 찾는 키. 커밋마다 새 키 → 매 실행 결과를 새로 저장
+      #   restore-keys : 정확히 일치하는 게 없을 때 접두사로 "가장 최근의 비슷한 캐시"를 찾는다
+      #   .bazelversion/lock 파일 해시를 키에 넣어 Bazel·의존성 버전이 바뀌면 캐시 계보를 분리한다
+      - name: Restore Bazel cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/bazel-disk
+            ~/.cache/bazel-repo
+            ~/.cache/bazelisk
+          key: bazel-${{ runner.os }}-${{ hashFiles('practice/week3/.bazelversion', 'practice/week3/MODULE.bazel.lock') }}-${{ github.sha }}
+          restore-keys: |
+            bazel-${{ runner.os }}-${{ hashFiles('practice/week3/.bazelversion', 'practice/week3/MODULE.bazel.lock') }}-
+            bazel-${{ runner.os }}-
 
       # 러너에 미리 설치된 bazel은 bazelisk이므로 .bazelversion(9.2.0)을 읽어 그 버전을 받는다
       - name: Show Bazel version

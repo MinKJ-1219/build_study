@@ -15,3 +15,9 @@ common:ci --lockfile_mode=error
 # stamping은 커밋마다 산출물을 바꾸므로 캐시 효율과 맞바꾸는 옵션이다.
 build:release --stamp
 build:release --workspace_status_command=tools/workspace_status.sh
+
+# ---- 3-4: CI 캐시 경로 고정 (actions/cache가 이 디렉터리들을 저장/복원한다) ----
+# disk cache: 액션 결과물(.o, 실행 파일, 테스트 결과) — 콘텐츠 해시로 찾는 CAS + 액션 캐시
+common:ci --disk_cache=~/.cache/bazel-disk
+# repository cache: 다운로드한 외부 의존성 아카이브(rules_cc, rules_pkg 등) — sha256으로 찾음
+common:ci --repository_cache=~/.cache/bazel-repo
