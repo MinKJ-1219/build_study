@@ -74,8 +74,8 @@
 - [x] **3-1. 첫 파이프라인** (2026-10-03 완료): CI 기본 단계(checkout → build → test) 개념, `cc_test` 타겟 추가, push 시 `bazel build //...`/`bazel test //...`를 돌리는 워크플로(`.github/workflows/week3-ci.yml`) 작성 → Actions 로그 읽기. 로직 실패(Test 스텝 FAIL)와 문법 오류(Build 스텝 FAIL, Test skipped)를 직접 비교. 경로 필터(`paths:`)의 한계와 `rdeps` 기반 영향 분석의 필요성 정리
 - [x] **3-2. 빌드 환경 일관성** (2026-10-03 완료): 러너 OS 고정(`runs-on: ubuntu-24.04`), 저장소 `.bazelrc`로 로컬/CI 옵션 통일(`--config=ci`: `--announce_rc`, `--lockfile_mode=error`), `:toolchain_info`로 호스트 gcc 자동 감지 문제와 `__DATE__` redacted 확인. `:config_test`로 "로컬 절대 경로 하드코딩 → CI에서만 실패"를 재현하고 `data` 선언 + runfiles 상대 경로로 수정. 컨테이너 잡·hermetic 툴체인(해시 고정)은 개념만 다룸(→ 5단계 크로스 컴파일에서 실습)
 - [x] **3-3. Package & Artifact** (2026-10-03 완료): `rules_pkg`의 `pkg_tar`로 `:app_pkg`(app + BUILD_INFO.txt, mtime 고정) 패키징, `--config=release`(`--stamp` + `tools/workspace_status.sh`)로 git 커밋·dirty 여부·버전(`0.1.<run_number>`)을 산출물에 기록, `actions/upload-artifact`로 패키지와 test.xml/test.log 업로드(`if: always()`로 실패 시에도 리포트 보존, 테스트 실패 시 Package는 skipped). 버전 전략·Artifactory/Nexus·양산 SW 장기 보관(UN R156)·dirty 빌드와 추적성 정리
-- [ ] **3-4. CI 캐시 전략**: `actions/cache`로 Bazel `--disk_cache`를 러너 간 공유 → 캐시 전/후 빌드 시간 비교. 원격 캐시 서버(`--remote_cache`)를 CI에 붙이는 구조는 개념으로 정리
-- [ ] **3-5. 리뷰**: 파이프라인 전체를 SDV 관점(멀티 타겟, 공급업체 코드)으로 다시 보며 4단계로 연결
+- [x] **3-4. CI 캐시 전략** (2026-10-03 완료): `actions/cache`로 disk/repository/bazelisk 캐시 공유(키 = OS + `.bazelversion`/lock 해시 + 커밋 SHA, `restore-keys` 접두사 폴백). 주석만 바꾸면 컴파일 1건만 재실행되고 링크·테스트는 캐시 hit(early cutoff) 확인. **캐시를 붙여도 CI Build가 줄지 않음** → `--profile` + `tools/profile_phases.py`로 측정 → 간접 의존성 `rules_cc → rules_apple → rules_swift`의 Swift 툴체인 자동 감지가 러너에 설치된 swiftc 때문에 약 36초 소요(환경 감지 결과는 캐시 불가)임을 발견 → `common:ci --repo_env=PATH=/usr/bin:/bin`으로 해결. **Build 50~56초 → 8~11초, Job 67~78초 → 21~23초.** `actions/cache` vs `--remote_cache`(액션 단위 조회, 공유 범위)는 개념으로 정리
+- [x] **3-5. 리뷰** (2026-10-03 완료): 파이프라인 전체를 SDV 관점(멀티 타겟, 공급업체 코드, 변형, 규모, 안전·보안, OTA)으로 다시 보며 4단계로 연결 — `docs/stage3_cicd_review.md`. 복습 질문 3개는 답안 요점과 함께 문서에 남김(자율 복습)
 
 ---
 
@@ -127,6 +127,6 @@
 - [x] 2단계: 빌드 시스템 도구 실습 (Make/CMake → Bazel)
   - [x] 2-1. Make/CMake 훑기 (practice/week2/01_make, 02_cmake)
   - [x] 2-2. Bazel 심화 (practice/week2/03_bazel) — 원격 실행(RBE)·멀티 언어 지원은 개념만 다룸, 실습 보류
-- [ ] 3단계: CI/CD와 빌드의 결합 ← 다음 진행 (세부 진행안 준비 완료, 3-1부터)
-- [ ] 4단계: SDV 특화 통합 빌드 고려사항
+- [x] 3단계: CI/CD와 빌드의 결합 (2026-10-03 완료, practice/week3 + .github/workflows/week3-ci.yml, 리뷰: docs/stage3_cicd_review.md) — 컨테이너 잡·hermetic 툴체인·원격 캐시 서버는 개념만 다룸
+- [ ] 4단계: SDV 특화 통합 빌드 고려사항 ← 다음 진행
 - [ ] 5단계: 실전 미니 프로젝트
