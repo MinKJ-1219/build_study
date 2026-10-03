@@ -66,6 +66,17 @@
 
 **추천 실습**: GitHub Actions(또는 GitLab CI)로 간단한 워크플로를 만들어 위 Bazel 프로젝트를 빌드/테스트하는 파이프라인 구성
 
+### 3단계 세부 진행안 (2026-10-03 준비)
+
+실습 위치: `practice/week3/` (2주차 Bazel 프로젝트를 복사해 확장) + 저장소 루트의 `.github/workflows/`
+실행 환경: GitHub Actions(공개 저장소 `MinKJ-1219/build_study` → 러너 무료), 로컬 검증은 WSL Bazel 9.2.0
+
+- [ ] **3-1. 첫 파이프라인**: CI 기본 단계(checkout → build → test) 개념, `cc_test` 타겟 추가, push 시 `bazel build //... && bazel test //...`를 돌리는 워크플로 작성 → Actions 로그 읽기
+- [ ] **3-2. 빌드 환경 일관성**: 러너 이미지 고정(`ubuntu-24.04` vs `ubuntu-latest`), `.bazelversion`로 툴체인 고정, 컨테이너 잡(`container:`) 개념. "CI에서만 실패" 상황을 일부러 만들어 원인 추적
+- [ ] **3-3. Package & Artifact**: 빌드 결과물을 묶어 `actions/upload-artifact`로 저장, 버전 전략(커밋 SHA·시맨틱 버전·빌드 번호), Artifactory/Nexus의 역할(개념)
+- [ ] **3-4. CI 캐시 전략**: `actions/cache`로 Bazel `--disk_cache`를 러너 간 공유 → 캐시 전/후 빌드 시간 비교. 원격 캐시 서버(`--remote_cache`)를 CI에 붙이는 구조는 개념으로 정리
+- [ ] **3-5. 리뷰**: 파이프라인 전체를 SDV 관점(멀티 타겟, 공급업체 코드)으로 다시 보며 4단계로 연결
+
 ---
 
 ## 4단계: SDV 특화 통합 빌드 고려사항 (약 2주)
@@ -116,6 +127,6 @@
 - [x] 2단계: 빌드 시스템 도구 실습 (Make/CMake → Bazel)
   - [x] 2-1. Make/CMake 훑기 (practice/week2/01_make, 02_cmake)
   - [x] 2-2. Bazel 심화 (practice/week2/03_bazel) — 원격 실행(RBE)·멀티 언어 지원은 개념만 다룸, 실습 보류
-- [ ] 3단계: CI/CD와 빌드의 결합
+- [ ] 3단계: CI/CD와 빌드의 결합 ← 다음 진행 (세부 진행안 준비 완료, 3-1부터)
 - [ ] 4단계: SDV 특화 통합 빌드 고려사항
 - [ ] 5단계: 실전 미니 프로젝트

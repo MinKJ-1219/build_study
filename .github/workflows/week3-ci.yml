@@ -1,0 +1,44 @@
+# 3주차 3-1 실습: 첫 CI 파이프라인 (checkout → build → test)
+# GitHub Actions는 저장소 루트의 .github/workflows/ 아래 파일만 인식한다.
+name: week3-ci
+
+on:
+  push:
+    branches: [main]
+    # 3주차 실습과 관계없는 파일만 바뀌었을 때는 파이프라인을 돌리지 않는다
+    paths:
+      - "practice/week3/**"
+      - ".github/workflows/week3-ci.yml"
+  pull_request:
+    paths:
+      - "practice/week3/**"
+      - ".github/workflows/week3-ci.yml"
+  # Actions 탭에서 수동 실행 버튼을 쓸 수 있게 한다
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    # 러너(빌드 에이전트): GitHub가 매 실행마다 새로 띄워주는 깨끗한 VM
+    runs-on: ubuntu-latest
+
+    # 모든 run 스텝의 기본 작업 디렉터리를 Bazel 워크스페이스 루트로 지정
+    defaults:
+      run:
+        working-directory: practice/week3
+
+    steps:
+      # 1) checkout: 러너는 빈 VM이므로 소스를 먼저 받아와야 한다
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # 러너에 미리 설치된 bazel은 bazelisk이므로 .bazelversion(9.2.0)을 읽어 그 버전을 받는다
+      - name: Show Bazel version
+        run: bazel --version
+
+      # 2) build: 워크스페이스의 모든 타겟을 빌드
+      - name: Build
+        run: bazel build //...
+
+      # 3) test: cc_test 타겟을 실행. 실패하면 이 스텝이 non-zero로 끝나 파이프라인이 빨간색이 된다
+      - name: Test
+        run: bazel test //... --test_output=errors
