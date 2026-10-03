@@ -40,4 +40,5 @@ cc_test(
     size = "small",
     srcs = ["config_test.c"],
     deps = [":foo"],
+    data = ["testdata/expected.txt"],
 )
