@@ -62,8 +62,13 @@ jobs:
           gcc --version | head -1
 
       # 2) build: 워크스페이스의 모든 타겟을 빌드 (.bazelrc의 ci 설정 적용)
+      #    3-4: --profile로 단계별 시간을 기록해 "어디서 시간이 걸리는지"를 측정한다
       - name: Build
-        run: bazel build --config=ci //...
+        run: bazel build --config=ci --profile="$RUNNER_TEMP/build_profile.json.gz" //...
+
+      # 3-4: 프로파일 요약 출력 (Launch / 분석 / 실행 단계 중 어디가 느린가?)
+      - name: Build profile summary
+        run: python3 tools/profile_phases.py "$RUNNER_TEMP/build_profile.json.gz"
 
       # 3-2: Bazel이 실제로 어떤 컴파일러로 빌드했는지 바이너리를 실행해 확인
       - name: Toolchain info
@@ -85,6 +90,7 @@ jobs:
           path: |
             practice/week3/bazel-testlogs/**/test.xml
             practice/week3/bazel-testlogs/**/test.log
+            ${{ runner.temp }}/build_profile.json.gz
           retention-days: 7
 
       # 4) package: git 정보를 새긴(stamped) 릴리스 패키지를 빌드
