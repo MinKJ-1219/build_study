@@ -10,3 +10,8 @@ common:ci --announce_rc
 # MODULE.bazel.lock과 실제 의존성 해석 결과가 다르면 갱신하지 말고 실패시킨다.
 # → 누군가 MODULE.bazel만 고치고 lock 파일 커밋을 빠뜨리면 CI가 잡아낸다.
 common:ci --lockfile_mode=error
+
+# ---- 릴리스 설정: `--config=release` 일 때만 git 정보를 산출물에 새긴다(stamping) ----
+# stamping은 커밋마다 산출물을 바꾸므로 캐시 효율과 맞바꾸는 옵션이다.
+build:release --stamp
+build:release --workspace_status_command=tools/workspace_status.sh

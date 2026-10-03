@@ -2,6 +2,7 @@
 # CI의 test 단계가 의미를 가지려면 "실행해서 성공/실패를 판정할 대상"이 있어야 한다.
 
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
 cc_library(
     name = "foo",
@@ -41,4 +42,37 @@ cc_test(
     srcs = ["config_test.c"],
     deps = [":foo"],
     data = ["testdata/expected.txt"],
+)
+
+# ---------------------------------------------------------------------------
+# 3-3 실습: Package (빌드 산출물 → 배포 단위)
+# ---------------------------------------------------------------------------
+
+# 빌드 정보 파일. stamp = -1이면 `--stamp`일 때만 실제 git 정보가 들어가고,
+# 아니면 고정 문구가 들어간다 → 평소 빌드는 캐시가 깨지지 않는다.
+genrule(
+    name = "build_info",
+    outs = ["BUILD_INFO.txt"],
+    cmd = select({
+        ":stamped": "grep '^STABLE_' bazel-out/stable-status.txt > $@",
+        "//conditions:default": "echo 'unstamped (build with --config=release)' > $@",
+    }),
+    stamp = -1,
+)
+
+config_setting(
+    name = "stamped",
+    values = {"stamp": "1"},
+)
+
+# app 실행 파일 + 빌드 정보를 하나의 tar로 묶는다.
+# pkg_tar는 파일 mtime·소유자를 고정값으로 기록해서 같은 입력이면 비트 단위로 같은 tar가 나온다.
+pkg_tar(
+    name = "app_pkg",
+    srcs = [
+        ":app",
+        ":build_info",
+    ],
+    package_dir = "app",
+    extension = "tar.gz",
 )

@@ -1,4 +1,5 @@
-# 3주차 3-1 실습: 첫 CI 파이프라인 (checkout → build → test)
+# 3주차 실습 CI 파이프라인: checkout → build → test → package → artifact 저장
+# (3-1: build/test, 3-2: 환경 고정, 3-3: package/artifact)
 # GitHub Actions는 저장소 루트의 .github/workflows/ 아래 파일만 인식한다.
 name: week3-ci
 
@@ -56,3 +57,38 @@ jobs:
       #    (--test_output=errors는 .bazelrc로 옮겼다)
       - name: Test
         run: bazel test --config=ci //...
+
+      # 3-3) test 리포트 저장: 러너 VM은 Job이 끝나면 폐기되므로 로그를 밖으로 꺼낸다.
+      #      if: always() → 테스트가 실패해도 실행된다 (실패 로그가 가장 필요한 순간이므로)
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports-${{ github.run_number }}
+          # bazel-testlogs는 심볼릭 링크지만 업로드 액션이 따라가서 실제 파일을 수집한다
+          path: |
+            practice/week3/bazel-testlogs/**/test.xml
+            practice/week3/bazel-testlogs/**/test.log
+          retention-days: 7
+
+      # 4) package: git 정보를 새긴(stamped) 릴리스 패키지를 빌드
+      #    버전 = 0.1.<CI 실행 번호> → 같은 커밋을 다시 돌려도 실행마다 고유한 번호가 붙는다
+      - name: Package
+        env:
+          BUILD_VERSION: 0.1.${{ github.run_number }}
+        run: |
+          bazel build --config=ci --config=release //:app_pkg
+          # 산출물 경로를 하드코딩하지 않고 Bazel에게 물어본다
+          PKG=$(bazel cquery --config=ci --config=release --output=files //:app_pkg 2>/dev/null)
+          mkdir -p "$RUNNER_TEMP/dist"
+          cp "$PKG" "$RUNNER_TEMP/dist/app-${BUILD_VERSION}.tar.gz"
+          tar -xzOf "$PKG" app/BUILD_INFO.txt
+          sha256sum "$RUNNER_TEMP/dist/"*
+
+      # 5) artifact 저장: 버전이 붙은 패키지를 GitHub에 업로드
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-0.1.${{ github.run_number }}-${{ github.sha }}
+          path: ${{ runner.temp }}/dist/
+          retention-days: 7

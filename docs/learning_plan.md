@@ -72,7 +72,7 @@
 실행 환경: GitHub Actions(공개 저장소 `MinKJ-1219/build_study` → 러너 무료), 로컬 검증은 WSL Bazel 9.2.0
 
 - [x] **3-1. 첫 파이프라인** (2026-10-03 완료): CI 기본 단계(checkout → build → test) 개념, `cc_test` 타겟 추가, push 시 `bazel build //...`/`bazel test //...`를 돌리는 워크플로(`.github/workflows/week3-ci.yml`) 작성 → Actions 로그 읽기. 로직 실패(Test 스텝 FAIL)와 문법 오류(Build 스텝 FAIL, Test skipped)를 직접 비교. 경로 필터(`paths:`)의 한계와 `rdeps` 기반 영향 분석의 필요성 정리
-- [ ] **3-2. 빌드 환경 일관성**: 러너 이미지 고정(`ubuntu-24.04` vs `ubuntu-latest`), `.bazelversion`로 툴체인 고정, 컨테이너 잡(`container:`) 개념. "CI에서만 실패" 상황을 일부러 만들어 원인 추적
+- [x] **3-2. 빌드 환경 일관성** (2026-10-03 완료): 러너 OS 고정(`runs-on: ubuntu-24.04`), 저장소 `.bazelrc`로 로컬/CI 옵션 통일(`--config=ci`: `--announce_rc`, `--lockfile_mode=error`), `:toolchain_info`로 호스트 gcc 자동 감지 문제와 `__DATE__` redacted 확인. `:config_test`로 "로컬 절대 경로 하드코딩 → CI에서만 실패"를 재현하고 `data` 선언 + runfiles 상대 경로로 수정. 컨테이너 잡·hermetic 툴체인(해시 고정)은 개념만 다룸(→ 5단계 크로스 컴파일에서 실습)
 - [ ] **3-3. Package & Artifact**: 빌드 결과물을 묶어 `actions/upload-artifact`로 저장, 버전 전략(커밋 SHA·시맨틱 버전·빌드 번호), Artifactory/Nexus의 역할(개념)
 - [ ] **3-4. CI 캐시 전략**: `actions/cache`로 Bazel `--disk_cache`를 러너 간 공유 → 캐시 전/후 빌드 시간 비교. 원격 캐시 서버(`--remote_cache`)를 CI에 붙이는 구조는 개념으로 정리
 - [ ] **3-5. 리뷰**: 파이프라인 전체를 SDV 관점(멀티 타겟, 공급업체 코드)으로 다시 보며 4단계로 연결
