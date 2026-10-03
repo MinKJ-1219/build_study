@@ -1,0 +1,12 @@
+# 3-2 실습: 로컬과 CI가 "같은 옵션"으로 Bazel을 돌리도록 저장소에 고정하는 설정 파일.
+# 워크스페이스 루트의 .bazelrc는 이 디렉터리에서 실행하는 모든 bazel 명령에 자동 적용된다.
+
+# 테스트 실패 시 출력만 보여준다 (로컬/CI 공통)
+test --test_output=errors
+
+# ---- CI 전용 설정: `bazel <cmd> --config=ci` 일 때만 적용 ----
+# 어떤 rc 옵션이 실제로 적용됐는지 로그 맨 앞에 출력 (CI 로그 디버깅용)
+common:ci --announce_rc
+# MODULE.bazel.lock과 실제 의존성 해석 결과가 다르면 갱신하지 말고 실패시킨다.
+# → 누군가 MODULE.bazel만 고치고 lock 파일 커밋을 빠뜨리면 CI가 잡아낸다.
+common:ci --lockfile_mode=error

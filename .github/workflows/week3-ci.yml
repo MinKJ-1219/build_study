@@ -19,7 +19,9 @@ on:
 jobs:
   build-and-test:
     # 러너(빌드 에이전트): GitHub가 매 실행마다 새로 띄워주는 깨끗한 VM
-    runs-on: ubuntu-latest
+    # 3-2: ubuntu-latest는 GitHub가 가리키는 대상을 바꿀 수 있는 "움직이는 태그"라서
+    #      OS 버전을 명시적으로 고정한다 (로컬 WSL도 Ubuntu 24.04)
+    runs-on: ubuntu-24.04
 
     # 모든 run 스텝의 기본 작업 디렉터리를 Bazel 워크스페이스 루트로 지정
     defaults:
@@ -35,10 +37,22 @@ jobs:
       - name: Show Bazel version
         run: bazel --version
 
-      # 2) build: 워크스페이스의 모든 타겟을 빌드
+      # 3-2: 러너의 OS와 호스트 컴파일러 정보를 남긴다 ("CI에서만 실패" 시 로컬과 비교할 근거)
+      - name: Show environment
+        run: |
+          grep PRETTY_NAME /etc/os-release
+          uname -r
+          gcc --version | head -1
+
+      # 2) build: 워크스페이스의 모든 타겟을 빌드 (.bazelrc의 ci 설정 적용)
       - name: Build
-        run: bazel build //...
+        run: bazel build --config=ci //...
+
+      # 3-2: Bazel이 실제로 어떤 컴파일러로 빌드했는지 바이너리를 실행해 확인
+      - name: Toolchain info
+        run: bazel run --config=ci //:toolchain_info
 
       # 3) test: cc_test 타겟을 실행. 실패하면 이 스텝이 non-zero로 끝나 파이프라인이 빨간색이 된다
+      #    (--test_output=errors는 .bazelrc로 옮겼다)
       - name: Test
-        run: bazel test //... --test_output=errors
+        run: bazel test --config=ci //...

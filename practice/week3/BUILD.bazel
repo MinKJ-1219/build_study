@@ -26,3 +26,18 @@ cc_test(
     srcs = ["foo_test.c"],
     deps = [":foo"],
 )
+
+# 3-2 실습: 이 바이너리를 컴파일한 툴체인 정보를 출력한다 (로컬 vs CI 비교용)
+cc_binary(
+    name = "toolchain_info",
+    srcs = ["toolchain_info.c"],
+)
+
+# 3-2 실습: 로컬에서는 PASS, CI에서만 FAIL하는 테스트.
+# testdata/expected.txt를 읽지만 data 속성으로 선언하지 않았다.
+cc_test(
+    name = "config_test",
+    size = "small",
+    srcs = ["config_test.c"],
+    deps = [":foo"],
+)
