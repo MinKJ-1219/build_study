@@ -23,3 +23,5 @@ practice/week2/02_cmake/build/
 practice/week2/03_bazel/bazel-*
 # Bazel 산출물 심볼릭 링크 (practice/week3)
 practice/week3/bazel-*
+# Bazel 산출물 심볼릭 링크 (practice/week4)
+practice/week4/bazel-*

@@ -108,6 +108,21 @@
 - COVESA (Connected Vehicle Systems Alliance)
 - AUTOSAR 공식 문서
 
+### 4단계 세부 진행안 (2026-10-05 준비)
+
+실습 위치: `practice/week4/` (3주차 Bazel 프로젝트를 확장: 벤더 모듈 추가, 크로스 컴파일 플랫폼 정의)
+실행 환경: WSL Bazel 9.2.0 (로컬 중심), 필요한 경우 `.github/workflows/`에 잡을 추가해 CI에서도 확인
+
+4-1 ~ 4-4는 3단계 리뷰(`docs/stage3_cicd_review.md` §3 "SDV 관점 스트레스 테스트")에서 짚었던 "지금 파이프라인이 무너지는 지점"을 하나씩 실제로 고쳐보는 방식으로 진행한다.
+
+- [x] **4-1. 멀티 타겟 크로스 컴파일** (2026-10-05 완료): 개념 — AUTOSAR Classic(ARXML→RTE 생성기, 정적 모놀리식 이미지, MCU) vs Adaptive(POSIX, 서비스 지향 `ara::com`, 독립 프로세스 단위 OTA, HPC), ECU/도메인 컨트롤러/HPC 통합으로 한 차량 빌드가 "MCU용 Classic + HPC용 Adaptive/Linux"를 동시에 만들어야 하는 구조. 실습 — `practice/week4/toolchain/`에 `cc_toolchain_config`(aarch64-linux-gnu-gcc 도구 경로 + 헤더 검색 경로) + `cc_toolchain` + `toolchain()`(exec=x86_64 리눅스, target=aarch64 리눅스) + `aarch64_linux` platform을 직접 정의. `bazel build //:app --platforms=//toolchain:aarch64_linux` → `file`로 ARM aarch64 확인 → 네이티브 실행 시 1단계와 같은 "Exec format error" 재현 → `qemu-aarch64 -L /usr/aarch64-linux-gnu`로 정상 실행까지 확인. (Bazel 9.2.0에서는 `cc_common`/`CcToolchainConfigInfo`/`cc_toolchain`이 더 이상 암묵적 전역이 아니라 `@rules_cc`에서 명시적으로 load해야 한다는 점을 디버깅하며 확인)
+- [ ] **4-2. 벤더 코드 통합 & 변형(Variant) 관리**: 개념 — Tier1/Tier2 공급업체 컴포넌트 통합, 인터페이스 계약(ARXML 등). 실습 — bzlmod `local_path_override` 등으로 "가상 벤더" 모듈을 외부 의존성처럼 추가(사전 빌드된 `.a`를 가정, 소스 없이), `config_setting` + `select()`로 차종/리전 변형(예: `REGION_EU` vs `REGION_US`)에 따라 다른 빌드 설정이 적용되는 구조 실습
+- [ ] **4-3. 추적성 & SBOM**: 개념 — ISO 26262 추적성(소스→바이너리 증명), ISO/SAE 21434와 SBOM. 실습(가벼움) — `bazel query 'deps(//...)'`로 의존성 목록을 뽑아 간단한 SBOM 초안을 생성하고, 3단계에서 만든 `BUILD_INFO.txt`(커밋 SHA) 구조와 연결해 "이 바이너리에 무엇이 들어갔는지" 증명하는 최소 구성을 정리
+- [ ] **4-4. 스케일 & 성능 & OTA**: 개념 중심(실습 보류) — `--remote_cache`/원격 실행(RBE)이 왜 필수가 되는지(3-4에서 쓴 `actions/cache`의 한계: 저장소당 용량 제한, 다운로드 비용), OTA 차분 업데이트를 고려한 아티팩트 설계. 실제 RBE 클러스터 구성은 보류하고 5단계와 연결
+- [ ] **4-5. 참고 자료 서베이**: SOAFEE, Eclipse SDV 워킹그룹, COVESA, AUTOSAR 공식 문서를 훑어보고 핵심 키워드만 정리 (실습 없음, 리뷰 때 문서화)
+
+각 항목이 끝날 때마다 간단히 정리하고, 4단계가 모두 끝나면 3단계와 같은 방식으로 리뷰 문서(`docs/stage4_sdv_review.md`)를 작성해 5단계 미니 프로젝트로 연결한다.
+
 ---
 
 ## 5단계: 실전 미니 프로젝트 (약 1~2주)

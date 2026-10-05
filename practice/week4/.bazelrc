@@ -1,0 +1,29 @@
+# 3-2 실습: 로컬과 CI가 "같은 옵션"으로 Bazel을 돌리도록 저장소에 고정하는 설정 파일.
+# 워크스페이스 루트의 .bazelrc는 이 디렉터리에서 실행하는 모든 bazel 명령에 자동 적용된다.
+
+# 테스트 실패 시 출력만 보여준다 (로컬/CI 공통)
+test --test_output=errors
+
+# ---- CI 전용 설정: `bazel <cmd> --config=ci` 일 때만 적용 ----
+# 어떤 rc 옵션이 실제로 적용됐는지 로그 맨 앞에 출력 (CI 로그 디버깅용)
+common:ci --announce_rc
+# MODULE.bazel.lock과 실제 의존성 해석 결과가 다르면 갱신하지 말고 실패시킨다.
+# → 누군가 MODULE.bazel만 고치고 lock 파일 커밋을 빠뜨리면 CI가 잡아낸다.
+common:ci --lockfile_mode=error
+
+# ---- 릴리스 설정: `--config=release` 일 때만 git 정보를 산출물에 새긴다(stamping) ----
+# stamping은 커밋마다 산출물을 바꾸므로 캐시 효율과 맞바꾸는 옵션이다.
+build:release --stamp
+build:release --workspace_status_command=tools/workspace_status.sh
+
+# ---- 3-4: CI 캐시 경로 고정 (actions/cache가 이 디렉터리들을 저장/복원한다) ----
+# disk cache: 액션 결과물(.o, 실행 파일, 테스트 결과) — 콘텐츠 해시로 찾는 CAS + 액션 캐시
+common:ci --disk_cache=~/.cache/bazel-disk
+# repository cache: 다운로드한 외부 의존성 아카이브(rules_cc, rules_pkg 등) — sha256으로 찾음
+common:ci --repository_cache=~/.cache/bazel-repo
+
+# 3-4 병목 해결: 저장소 규칙(툴체인 자동 감지 등)이 보는 PATH를 표준 경로로 고정한다.
+# GitHub 러너에는 Swift가 /usr/local/bin 쪽에 설치돼 있어서, 간접 의존성인 rules_swift
+# (rules_cc → rules_apple → rules_swift)가 swiftc를 발견하면 자동 감지에만 약 36초를 쓴다.
+# 자동 감지 결과는 환경에 따라 달라지므로 어떤 캐시에도 저장되지 않아 매 실행마다 반복된다.
+common:ci --repo_env=PATH=/usr/bin:/bin
