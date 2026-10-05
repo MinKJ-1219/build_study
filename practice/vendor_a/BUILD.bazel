@@ -1,0 +1,14 @@
+# 4-2 실습: 공급업체가 넘겨준 헤더 + 사전 빌드된 정적 라이브러리를 Bazel 타겟으로 노출.
+# cc_import는 "이미 컴파일된 결과물"을 CcInfo(헤더 경로, 링크할 라이브러리)로 감싸서
+# 소스가 있는 cc_library와 똑같이 deps에 넣어 쓸 수 있게 해준다 — 대신 Bazel은 이
+# .a 내부가 어떤 소스/의존성으로 만들어졌는지 전혀 알지 못한다(불투명한 블랙박스).
+
+load("@rules_cc//cc:defs.bzl", "cc_import")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_import(
+    name = "vendor_a_import",
+    hdrs = ["vendor_a.h"],
+    static_library = "libvendor_a.a",
+)

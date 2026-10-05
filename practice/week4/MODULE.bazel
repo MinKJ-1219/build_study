@@ -14,3 +14,13 @@ bazel_dep(name = "platforms", version = "1.0.0")
 # 4-1 실습: 등록해두면 `--platforms=//toolchain:aarch64_linux`를 줬을 때
 # Bazel이 toolchain 플래그 없이도 이 aarch64 cc_toolchain을 자동으로 찾는다.
 register_toolchains("//toolchain:cc_toolchain_for_aarch64")
+
+# 4-2 실습: Tier1 공급업체 "vendor_a"를 외부 모듈처럼 끌어온다.
+# 실제로는 Bazel Central Registry나 사내 레지스트리에서 받아오지만(archive_override,
+# git_override 등), 지금은 저장소 안의 별도 디렉터리를 local_path_override로 연결해
+# "다른 조직이 만든 모듈을 빌드 그래프에 통합한다"는 구조만 재현한다.
+bazel_dep(name = "vendor_a", version = "1.0")
+local_path_override(
+    module_name = "vendor_a",
+    path = "../vendor_a",
+)

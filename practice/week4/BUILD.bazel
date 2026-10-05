@@ -76,3 +76,40 @@ pkg_tar(
     package_dir = "app",
     extension = "tar.gz",
 )
+
+# ---------------------------------------------------------------------------
+# 4-2 실습 (1): 벤더(Tier1) 코드 통합
+# ---------------------------------------------------------------------------
+
+# @vendor_a//:vendor_a_import는 소스 없이 헤더+사전 빌드된 .a만 노출하는 블랙박스 타겟이다.
+# Bazel 입장에서는 일반 cc_library 의존성과 똑같이 다룬다 — 차이는 "안을 들여다볼 수 없다"는 것뿐.
+cc_binary(
+    name = "vendor_app",
+    srcs = ["vendor_app.c"],
+    deps = ["@vendor_a//:vendor_a_import"],
+)
+
+# ---------------------------------------------------------------------------
+# 4-2 실습 (2): 변형(Variant) 관리 — select()로 리전별 다른 구현을 고른다
+# ---------------------------------------------------------------------------
+
+# `bazel build //:region_demo --define=region=us`를 줬을 때만 참이 된다.
+config_setting(
+    name = "region_us",
+    values = {"define": "region=us"},
+)
+
+cc_library(
+    name = "region_info",
+    hdrs = ["region.h"],
+    srcs = select({
+        ":region_us": ["region_us.c"],
+        "//conditions:default": ["region_eu.c"],
+    }),
+)
+
+cc_binary(
+    name = "region_demo",
+    srcs = ["region_main.c"],
+    deps = [":region_info"],
+)
