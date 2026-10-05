@@ -118,10 +118,10 @@
 - [x] **4-1. 멀티 타겟 크로스 컴파일** (2026-10-05 완료): 개념 — AUTOSAR Classic(ARXML→RTE 생성기, 정적 모놀리식 이미지, MCU) vs Adaptive(POSIX, 서비스 지향 `ara::com`, 독립 프로세스 단위 OTA, HPC), ECU/도메인 컨트롤러/HPC 통합으로 한 차량 빌드가 "MCU용 Classic + HPC용 Adaptive/Linux"를 동시에 만들어야 하는 구조. 실습 — `practice/week4/toolchain/`에 `cc_toolchain_config`(aarch64-linux-gnu-gcc 도구 경로 + 헤더 검색 경로) + `cc_toolchain` + `toolchain()`(exec=x86_64 리눅스, target=aarch64 리눅스) + `aarch64_linux` platform을 직접 정의. `bazel build //:app --platforms=//toolchain:aarch64_linux` → `file`로 ARM aarch64 확인 → 네이티브 실행 시 1단계와 같은 "Exec format error" 재현 → `qemu-aarch64 -L /usr/aarch64-linux-gnu`로 정상 실행까지 확인. (Bazel 9.2.0에서는 `cc_common`/`CcToolchainConfigInfo`/`cc_toolchain`이 더 이상 암묵적 전역이 아니라 `@rules_cc`에서 명시적으로 load해야 한다는 점을 디버깅하며 확인)
 - [x] **4-2. 벤더 코드 통합 & 변형(Variant) 관리** (2026-10-05 완료): 개념 — Tier1/Tier2 공급업체 컴포넌트 통합, 인터페이스 계약(헤더/ARXML 등). 실습 — `practice/vendor_a/`를 별도 Bazel 모듈(소스 없이 헤더 + 사전 빌드된 `libvendor_a.a`만 제공)로 만들고 `week4` `MODULE.bazel`에서 `local_path_override`로 외부 의존성처럼 연결, `cc_import`로 소비(`:vendor_app`). `bazel query 'deps(//:vendor_app)'`로 `@vendor_a//:libvendor_a.a`가 더 이상 쪼개지지 않는 블랙박스 리프라는 것 확인(소스 없는 `.a`는 "무엇이 바뀌었는지"를 알 수 없다는 추적성 문제 체감). `config_setting`(`--define=region=us`) + `select()`로 리전 변형(`region_eu.c` vs `region_us.c`)을 전환하는 `:region_demo` 실습. 추가 개념(실습 없이 정리) — **모놀리식 vs 컴포넌트별 독립 빌드**: `:foo`(소스, 모놀리식 쪽 — 그래프 안에서 같이 재검증)와 `@vendor_a`(사전 빌드, 독립 빌드 쪽 — 블랙박스로 통합)가 같은 bzlmod 메커니즘 안에 공존한다는 점으로 대체 설명. **변형의 조합 폭발 + 코드 생성 도구 연계**: 차종×트림×리전처럼 축이 여러 개면 조합 수가 곱으로 늘어나 CI 비용이 커짐 → 바이너리 변형은 최소화하고 나머지는 런타임 설정으로. ARXML/DBC 같은 코드 생성 입력은 `genrule`(3단계 `:build_info`와 같은 패턴)로 빌드 그래프에 들어온다는 것만 개념으로 정리(실습은 생략하기로 함)
 - [x] **4-3. 추적성 & SBOM** (2026-10-05 완료): 개념 — ISO 26262 추적성(소스→바이너리 증명), ISO/SAE 21434와 SBOM. 실습 — `practice/week4/tools/gen_sbom.sh`로 `bazel query "kind('source file', deps(...))"` 기반 최소 SBOM 초안(파일명/SHA256/출처) 생성. `:app`(1st-party만)과 `:vendor_app`(벤더 포함) 비교 → 벤더 쪽은 해시로 무결성만 확인되고 "이름+버전" 필드가 없다는 것, `bazel mod graph`로 `local_path_override`가 버전 추적을 생략해 `vendor_a@_`로 나오는 것(실제 레지스트리 모듈이면 `@1.0`처럼 나와 SBOM의 component@version 필드가 됨) 확인. `BUILD_INFO.txt`(커밋 단위 추적성)와 SBOM 초안(구성요소 단위 추적성)이 지금은 따로 생성되는 별개 산출물이라는 한계 정리
-- [ ] **4-4. 스케일 & 성능 & OTA**: 개념 중심(실습 보류) — `--remote_cache`/원격 실행(RBE)이 왜 필수가 되는지(3-4에서 쓴 `actions/cache`의 한계: 저장소당 용량 제한, 다운로드 비용), OTA 차분 업데이트를 고려한 아티팩트 설계. 실제 RBE 클러스터 구성은 보류하고 5단계와 연결
-- [ ] **4-5. 참고 자료 서베이**: SOAFEE, Eclipse SDV 워킹그룹, COVESA, AUTOSAR 공식 문서를 훑어보고 핵심 키워드만 정리 (실습 없음, 리뷰 때 문서화)
+- [x] **4-4. 스케일 & 성능 & OTA** (2026-10-05 완료, 개념만): 캐싱("안 해도 되는 일을 줄임")과 원격 실행("해야 하는 일을 병렬화")의 차이, `actions/cache`의 구조적 한계(런 단위 아카이브 전체 다운로드, 저장소 용량 제한) vs `--remote_cache`(액션 단위 콘텐츠 해시 조회)가 왜 다른지 정리. OTA 차분 업데이트가 작아지려면 재현 가능한 빌드(1단계)·stamping 격리(3-3)가 전제조건이라는 것, 버전/호환성 메타데이터가 4-2 변형 관리와 연결된다는 것 정리. 실제 RBE 클러스터·원격 캐시 서버 구성은 5단계로 이연
+- [x] **4-5. 참고 자료 서베이** (2026-10-05 완료): SOAFEE(클라우드 네이티브 SDV 레퍼런스, Adaptive AUTOSAR의 클라우드 빌드/배포 쪽 반쪽), Eclipse SDV 워킹그룹(S-CORE 등 25+ 오픈소스 프로젝트, "End-to-End Demo Blueprint"가 5단계 설계에 참고할 만함), COVESA/VSS(4-2 인터페이스 계약의 표준화 버전), AUTOSAR 공식 문서(`ara::com` 코드 생성기 = 4-2 "코드 생성 도구 연계"의 실체)를 각각 우리 실습과 연결해서 정리. 상세 내용과 출처는 `docs/stage4_sdv_review.md` §6
 
-각 항목이 끝날 때마다 간단히 정리하고, 4단계가 모두 끝나면 3단계와 같은 방식으로 리뷰 문서(`docs/stage4_sdv_review.md`)를 작성해 5단계 미니 프로젝트로 연결한다.
+4단계 리뷰 문서: `docs/stage4_sdv_review.md` (2026-10-05 작성) — 완성된 결과물, 단계별 교훈, 3단계 스트레스 테스트 재점검(어디까지 고쳤고 어디가 비었는지), 복습 질문 3개, 참고 자료 서베이(§6) 포함, 5단계로 연결.
 
 ---
 
@@ -143,5 +143,5 @@
   - [x] 2-1. Make/CMake 훑기 (practice/week2/01_make, 02_cmake)
   - [x] 2-2. Bazel 심화 (practice/week2/03_bazel) — 원격 실행(RBE)·멀티 언어 지원은 개념만 다룸, 실습 보류
 - [x] 3단계: CI/CD와 빌드의 결합 (2026-10-03 완료, practice/week3 + .github/workflows/week3-ci.yml, 리뷰: docs/stage3_cicd_review.md) — 컨테이너 잡·hermetic 툴체인·원격 캐시 서버는 개념만 다룸
-- [ ] 4단계: SDV 특화 통합 빌드 고려사항 ← 다음 진행
-- [ ] 5단계: 실전 미니 프로젝트
+- [x] 4단계: SDV 특화 통합 빌드 고려사항 (2026-10-05 완료, practice/week4 + practice/vendor_a, 리뷰: docs/stage4_sdv_review.md, 4-5 서베이 포함) — RBE·원격 캐시 서버·Cortex-M 툴체인·다중 저장소 rdeps 분석은 개념만
+- [ ] 5단계: 실전 미니 프로젝트 ← 다음 진행
